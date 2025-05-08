@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-
+import { Plus } from 'lucide-react';
+import axios from 'axios';
 const initialRestaurants = [
   { id: 1, name: 'Cafe Mocha', address: '123 Main St, Cityville', contact: '555-1234' },
   { id: 2, name: 'Pizza Palace', address: '456 Oak Ave, Townsville', contact: '555-5678' },
@@ -48,17 +49,22 @@ const RestaurantList = () => {
     return isValid;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (validateForm()) {
-      const newRestaurant = {
-        id: restaurants.length + 1,
-        ...formData,
-      };
-      setRestaurants((prev) => [...prev, newRestaurant]);
-      handleClose();
+      try {
+        const response = await axios.post('http://localhost:3000/restaurants', formData);
+        const newRestaurant = {
+          id: response.data.id || restaurants.length + 1,
+          ...formData,
+        };
+        setRestaurants((prev) => [...prev, newRestaurant]);
+        handleClose();
+      } catch (error) {
+        console.error('Failed to add restaurant:', error);
+        alert('Error adding restaurant. Please try again.');
+      }
     }
   };
-
   return (
     <div className="px-4 sm:px-6 py-10">
       <div className="max-w-3xl mx-auto">
@@ -68,6 +74,7 @@ const RestaurantList = () => {
             onClick={handleOpen}
             className="p-2 bg-green-100 rounded-full hover:bg-green-200 transition-colors"
           >
+            <Plus className="w-5 h-5 text-green-700" />
           </button>
         </div>
 
@@ -78,9 +85,7 @@ const RestaurantList = () => {
                 <th className="w-1/3 py-3 px-4 text-left font-semibold">Name</th>
                 <th className="w-2/5 py-3 px-4 text-left font-semibold">Address</th>
                 <th className="w-1/3 py-3 px-4 text-right font-semibold">
-                  <div className="flex items-center justify-end">
-                    Contact
-                  </div>
+                  <div className="flex items-center justify-end">Contact</div>
                 </th>
               </tr>
             </thead>
