@@ -1,36 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus } from 'lucide-react';
 import axios from 'axios';
-const initialRestaurants = [
-  { id: 1, name: 'Cafe Mocha', address: '123 Main St, Cityville', contact: '555-1234' },
-  { id: 2, name: 'Pizza Palace', address: '456 Oak Ave, Townsville', contact: '555-5678' },
-  { id: 3, name: 'Sushi Haven', address: '789 Pine Rd, Villagetown', contact: '555-9012' },
-  { id: 4, name: 'Burger Bonanza', address: '321 Elm St, Metropolis', contact: '555-3456' },
-  { id: 5, name: 'Taco Terrace', address: '654 Cedar Ln, Suburbia', contact: '555-7890' },
-];
 
 const RestaurantList = () => {
-  const [restaurants, setRestaurants] = useState(initialRestaurants);
+  const [restaurants, setRestaurants] = useState([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', address: '', contact: '' });
-  const [errors, setErrors] = useState({ name: '', address: '', contact: '' });
+  const [errors, setErrors] = useState({ name: '', address: '', contact: '', general: '' });
+
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      try {
+        const response = await axios.get('http://localhost:3000/restaurants');
+        console.log(response.data,"sssss")
+        setRestaurants(response.data);
+      } catch (error) {
+        console.error('Failed to fetch restaurants:', error);
+        setErrors((prev) => ({ ...prev, general: 'Failed to load restaurants' }));
+      }
+    };
+    fetchRestaurants();
+  }, []);
 
   const handleOpen = () => setOpen(true);
   const handleClose = () => {
     setOpen(false);
     setFormData({ name: '', address: '', contact: '' });
-    setErrors({ name: '', address: '', contact: '' });
+    setErrors({ name: '', address: '', contact: '', general: '' });
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    setErrors((prev) => ({ ...prev, [name]: '' }));
+    setErrors((prev) => ({ ...prev, [name]: '', general: '' }));
   };
 
   const validateForm = () => {
     let isValid = true;
-    const newErrors = { name: '', address: '', contact: '' };
+    const newErrors = { name: '', address: '', contact: '', general: '' };
 
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
@@ -53,18 +60,18 @@ const RestaurantList = () => {
     if (validateForm()) {
       try {
         const response = await axios.post('http://localhost:3000/restaurants', formData);
-        const newRestaurant = {
-          id: response.data.id || restaurants.length + 1,
-          ...formData,
-        };
-        setRestaurants((prev) => [...prev, newRestaurant]);
+        console.log(response,"assss")
+        setRestaurants((prev) => [...prev, response.data.data]);
         handleClose();
+        
       } catch (error) {
         console.error('Failed to add restaurant:', error);
-        alert('Error adding restaurant. Please try again.');
+        setErrors((prev) => ({ ...prev, general: 'Failed to add restaurant' }));
       }
     }
   };
+
+  
   return (
     <div className="px-4 sm:px-6 py-10">
       <div className="max-w-3xl mx-auto">
@@ -117,6 +124,7 @@ const RestaurantList = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
               <h2 className="text-xl font-semibold text-gray-800 mb-4">Add New Restaurant</h2>
+              {errors.general && <p className="text-red-500 text-sm mb-4">{errors.general}</p>}
               <div className="space-y-4">
                 <div>
                   <input
