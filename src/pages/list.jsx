@@ -1,44 +1,52 @@
 import React, { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, Trash2, Pencil } from 'lucide-react';
 import axios from 'axios';
 
 const RestaurantList = () => {
   const [restaurants, setRestaurants] = useState([]);
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({ name: '', address: '', contact: '' });
+  const [editId, setEditId] = useState(null); // 🔧 new: to store restaurant id while editing
   const [errors, setErrors] = useState({ name: '', address: '', contact: '', general: '' });
+  const [successMessage, setSuccessMessage] = useState('');
+
+  const fetchRestaurants = async () => {
+    try {
+      const response = await axios.get('http://localhost:3000/restaurants');
+      setRestaurants(response.data);
+    } catch (error) {
+      console.error('Failed to fetch restaurants:', error);
+      setErrors((prev) => ({ ...prev, general: 'Failed to load restaurants' }));
+    }
+  };
 
   useEffect(() => {
-    const fetchRestaurants = async () => {
-      try {
-        const response = await axios.get('http://localhost:3000/restaurants');
-        console.log(response.data,"sssss")
-        setRestaurants(response.data);
-      } catch (error) {
-        console.error('Failed to fetch restaurants:', error);
-        setErrors((prev) => ({ ...prev, general: 'Failed to load restaurants' }));
-      }
-    };
     fetchRestaurants();
   }, []);
 
-  const handleOpen = () => setOpen(true);
+  const handleOpen = () => {
+    setOpen(true);
+    setEditId(null);
+  };
+
   const handleClose = () => {
     setOpen(false);
     setFormData({ name: '', address: '', contact: '' });
     setErrors({ name: '', address: '', contact: '', general: '' });
+    setSuccessMessage('');
+    setEditId(null);
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: '', general: '' }));
+    setSuccessMessage('');
   };
 
   const validateForm = () => {
     let isValid = true;
     const newErrors = { name: '', address: '', contact: '', general: '' };
-
     if (!formData.name.trim()) {
       newErrors.name = 'Name is required';
       isValid = false;
@@ -51,27 +59,51 @@ const RestaurantList = () => {
       newErrors.contact = 'Contact is required';
       isValid = false;
     }
-
     setErrors(newErrors);
     return isValid;
   };
 
   const handleSubmit = async () => {
-    if (validateForm()) {
-      try {
-        const response = await axios.post('http://localhost:3000/restaurants', formData);
-        console.log(response,"assss")
-        setRestaurants((prev) => [...prev, response.data.data]);
-        handleClose();
-        
-      } catch (error) {
-        console.error('Failed to add restaurant:', error);
-        setErrors((prev) => ({ ...prev, general: 'Failed to add restaurant' }));
+    if (!validateForm()) return;
+
+    try {
+      if (editId) {
+        await axios.put(`http://localhost:3000/restaurants?id=${editId}`, formData);
+        setSuccessMessage('Restaurant updated successfully!');
+      } else {
+        await axios.post('http://localhost:3000/restaurants', formData);
+        setSuccessMessage('Restaurant added successfully!');
       }
+      fetchRestaurants();
+      handleClose();
+    } catch (error) {
+      console.error('Failed to save restaurant:', error);
+      setErrors((prev) => ({ ...prev, general: 'Failed to save restaurant' }));
     }
   };
 
-  
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this restaurant?')) return;
+
+    try {
+      await axios.delete(`http://localhost:3000/restaurants/${id}`);
+      fetchRestaurants();
+    } catch (error) {
+      console.error('Failed to delete restaurant:', error);
+    }
+  };
+
+  const handleEdit = (restaurant) => {
+    setFormData({
+      name: restaurant.name,
+      address: restaurant.address,
+      contact: restaurant.contact,
+    });
+    console.log(restaurant.id,"ssssssssssssssssssss")
+    setEditId(restaurant.id); // set edit mode
+    setOpen(true);
+  };
+
   return (
     <div className="px-4 sm:px-6 py-10">
       <div className="max-w-3xl mx-auto">
@@ -89,11 +121,10 @@ const RestaurantList = () => {
           <table className="w-full border-collapse">
             <thead>
               <tr className="bg-gradient-to-r from-green-600 to-green-500 text-white">
-                <th className="w-1/3 py-3 px-4 text-left font-semibold">Name</th>
-                <th className="w-2/5 py-3 px-4 text-left font-semibold">Address</th>
-                <th className="w-1/3 py-3 px-4 text-right font-semibold">
-                  <div className="flex items-center justify-end">Contact</div>
-                </th>
+                <th className="py-3 px-4 text-left font-semibold">Name</th>
+                <th className="py-3 px-4 text-left font-semibold">Address</th>
+                <th className="py-3 px-4 text-right font-semibold">Contact</th>
+                <th className="py-3 px-4 text-right font-semibold">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -106,11 +137,25 @@ const RestaurantList = () => {
                     <td className="py-3 px-4">{restaurant.name}</td>
                     <td className="py-3 px-4">{restaurant.address}</td>
                     <td className="py-3 px-4 text-right">{restaurant.contact}</td>
+                    <td className="py-3 px-4 text-right space-x-2">
+                      <button
+                        onClick={() => handleEdit(restaurant)}
+                        className="p-1 hover:bg-yellow-100 rounded"
+                      >
+                        <Pencil className="w-4 h-4 text-yellow-600" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(restaurant.id)}
+                        className="p-1 hover:bg-red-100 rounded"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-600" />
+                      </button>
+                    </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td colSpan={3} className="py-6 text-center text-gray-500">
+                  <td colSpan={4} className="py-6 text-center text-gray-500">
                     No restaurants available.
                   </td>
                 </tr>
@@ -123,62 +168,54 @@ const RestaurantList = () => {
         {open && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg w-full max-w-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Add New Restaurant</h2>
+              <h2 className="text-xl font-semibold text-gray-800 mb-4">
+                {editId ? 'Edit Restaurant' : 'Add New Restaurant'}
+              </h2>
               {errors.general && <p className="text-red-500 text-sm mb-4">{errors.general}</p>}
+              {successMessage && <p className="text-green-500 text-sm mb-4">{successMessage}</p>}
               <div className="space-y-4">
-                <div>
-                  <input
-                    autoFocus
-                    name="name"
-                    placeholder="Restaurant Name"
-                    type="text"
-                    value={formData.name}
-                    onChange={handleChange}
-                    className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      errors.name ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
-                </div>
-                <div>
-                  <input
-                    name="address"
-                    placeholder="Address"
-                    type="text"
-                    value={formData.address}
-                    onChange={handleChange}
-                    className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      errors.address ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.address && <p className="text-red-500 text-sm mt-1">{errors.address}</p>}
-                </div>
-                <div>
-                  <input
-                    name="contact"
-                    placeholder="Contact"
-                    type="text"
-                    value={formData.contact}
-                    onChange={handleChange}
-                    className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
-                      errors.contact ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                  />
-                  {errors.contact && <p className="text-red-500 text-sm mt-1">{errors.contact}</p>}
-                </div>
+                <input
+                  name="name"
+                  placeholder="Restaurant Name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                    errors.name ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
+
+                <input
+                  name="address"
+                  placeholder="Address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                    errors.address ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.address && <p className="text-red-500 text-sm">{errors.address}</p>}
+
+                <input
+                  name="contact"
+                  placeholder="Contact"
+                  value={formData.contact}
+                  onChange={handleChange}
+                  className={`w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                    errors.contact ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                {errors.contact && <p className="text-red-500 text-sm">{errors.contact}</p>}
               </div>
               <div className="flex justify-end mt-6 space-x-3">
-                <button
-                  onClick={handleClose}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-800"
-                >
+                <button onClick={handleClose} className="px-4 py-2 text-gray-600 hover:text-gray-800">
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
                 >
-                  Add
+                  {editId ? 'Update' : 'Add'}
                 </button>
               </div>
             </div>
