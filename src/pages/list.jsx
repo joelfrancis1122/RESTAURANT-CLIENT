@@ -12,7 +12,7 @@ const RestaurantList = () => {
 
   const fetchRestaurants = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/restaurants');
+      const response = await axios.get(`${import.meta.env.VITE_API_URL}/restaurants`);
       setRestaurants(response.data);
     } catch (error) {
       console.error('Failed to fetch restaurants:', error);
@@ -22,6 +22,7 @@ const RestaurantList = () => {
 
   useEffect(() => {
     fetchRestaurants();
+      
   }, []);
 
   const handleOpen = () => {
@@ -71,10 +72,10 @@ const RestaurantList = () => {
 
     try {
       if (editId) {
-        await axios.put(`http://localhost:3000/restaurants?id=${editId}`, formData);
+        await axios.put(`${import.meta.env.VITE_API_URL}/restaurants?id=${editId}`, formData);
         setSuccessMessage('Restaurant updated successfully!');
       } else {
-        await axios.post('http://localhost:3000/restaurants', formData);
+        await axios.post(`${import.meta.env.VITE_API_URL}/restaurants`, formData);
         setSuccessMessage('Restaurant added successfully!');
       }
       fetchRestaurants();
@@ -89,7 +90,7 @@ const RestaurantList = () => {
     if (!window.confirm('Are you sure you want to delete this restaurant?')) return;
 
     try {
-      await axios.delete(`http://localhost:3000/restaurants/${id}`);
+      await axios.delete(`${import.meta.env}/restaurants/${id}`);
       fetchRestaurants();
     } catch (error) {
       console.error('Failed to delete restaurant:', error);
@@ -109,7 +110,7 @@ const RestaurantList = () => {
     setErrors({ name: '', address: '', contact: '', general: '' });
     setSuccessMessage('');
   };
-
+console.log(import.meta.env.VITE_API_URL,"sssssss")
   return (
     <div className="dark min-h-screen px-4 sm:px-6 py-10 dark:bg-gray-900">
       <div className="max-w-3xl mx-auto">
