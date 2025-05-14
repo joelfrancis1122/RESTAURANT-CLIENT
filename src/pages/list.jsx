@@ -14,6 +14,7 @@ const RestaurantList = () => {
     try {
       const response = await axios.get(`${import.meta.env.VITE_API_URL}/restaurants`);
       setRestaurants(response.data);
+      console.log(response.data,"this is the data")
     } catch (error) {
       console.error('Failed to fetch restaurants:', error);
       setErrors((prev) => ({ ...prev, general: 'Failed to load restaurants' }));
@@ -110,7 +111,6 @@ const RestaurantList = () => {
     setErrors({ name: '', address: '', contact: '', general: '' });
     setSuccessMessage('');
   };
-console.log(import.meta.env.VITE_API_URL,"sssssss")
   return (
     <div className="dark min-h-screen px-4 sm:px-6 py-10 dark:bg-gray-900">
       <div className="max-w-3xl mx-auto">
