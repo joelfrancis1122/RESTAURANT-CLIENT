@@ -91,7 +91,7 @@ const RestaurantList = () => {
     if (!window.confirm('Are you sure you want to delete this restaurant?')) return;
 
     try {
-      await axios.delete(`${import.meta.env}/restaurants/${id}`);
+      await axios.delete(`${import.meta.env.VITE_API_URL}/restaurants/${id}`);
       fetchRestaurants();
     } catch (error) {
       console.error('Failed to delete restaurant:', error);
