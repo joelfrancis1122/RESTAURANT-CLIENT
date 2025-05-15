@@ -1,6 +1,6 @@
 import React from 'react'
 import { Routes, Route } from 'react-router-dom'
-import RestaurantList from '../pages/list'
+import RestaurantList from '../pages/Restaurant'
 
 const RouteConfig = () => {
   return (
